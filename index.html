@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/3799/3799458.png">
+    <title>Calculadora de Motobombas</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Fonte moderna */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container {
+            background-color: rgb(11, 139, 161);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+
+        label {
+            font-weight: 600;
+        }
+
+        select, input {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        button {
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .title {
+            font-weight: 600;
+            font-size: 1.75rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .resultado {
+            background-color: rgb(239, 247, 241);
+            margin-top: 1rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 mt-5 dark:bg-gray-900 text-black dark:text-white">
+    <div class="container mx-auto w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <h1 class="text-balance title text-black dark:text-gray-100">Calculadora de Motobombas</h1>
+        
+        <!-- Inputs -->
+        <div class="mb-4">
+            <label for="vazao" class="block text-gray-800 dark:text-gray-300 mb-1">Vazão (m³/h):</label>
+            <select id="vazao" class="block w-full p-2 border dark:bg-gray-700 dark:border-gray-600 focus:ring focus:border-blue-300 rounded-lg">
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="diametro" class="block text-gray-800 dark:text-gray-300 mb-1">Diâmetro da Tubulação (polegadas):</label>
+            <select id="diametro" class="block w-full p-2 border dark:bg-gray-700 dark:border-gray-600 focus:ring focus:border-blue-300 rounded-lg">
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="alturaSuc" class="block text-gray-800 dark:text-gray-300 mb-">Altura de Sucção (m):</label>
+            <input type="number" id="alturaSuc" class="block w-full p-2 border dark:bg-gray-700 dark:border-gray-600 focus:ring focus:border-blue-300 rounded-lg" placeholder="Insira o desnível entre a motobomba reservatório">
+        </div>
+
+        <div class="mb-4">
+            <label for="alturaRec" class="block text-gray-800 dark:text-gray-300 mb-1">Altura de Recalque (m):</label>
+            <input type="number" id="alturaRec" class="block w-full p-2 border dark:bg-gray-700 dark:border-gray-600 focus:ring focus:border-blue-300 rounded-lg" placeholder="Insira o desnível entre bomba e o ponto da instalação">
+        </div>
+
+        <div class="mb-4">
+            <label for="comprimento" class="block text-gray-800 dark:text-gray-300 mb-1">Comprimento da Tubulação (m):</label>
+            <input type="number" id="comprimento" class="block w-full p-2 border dark:bg-gray-700 dark:border-gray-600 focus:ring focus:border-blue-300 rounded-lg" placeholder="Comprimento da Tubulação">
+        </div>
+
+        <div class="flex justify-center">
+            <button id="calcular" class="bg-black text-white p-1 rounded-lg transition-all hover:bg-blue-600 focus:outline-none">Calcular</button></div>
+            
+        
+        <!-- Output -->
+        <p id="resultado" class="resultado mx-3 text-red-600 dark:text-gray-100 mt-7 rounded-lg "></p>
+    </div>
+    
+
+    <!-- JavaScript Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script>
+        let tabelaPerdaCarga = {};
+
+        // Carregar o arquivo JSON e preencher o select de vazão
+        fetch('tabela_perda_carga.json')
+            .then(response => response.json())
+            .then(data => {
+                tabelaPerdaCarga = data;
+
+                // Preencher o select de vazão
+                const vazaoSelect = document.getElementById('vazao');
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.vazao;
+                    option.text = `${item.vazao} m³/h`;
+                    vazaoSelect.appendChild(option);
+                });
+
+                // Evento para preencher o select de diâmetro conforme a vazão escolhida
+                vazaoSelect.addEventListener('change', () => {
+                    const selectedVazao = vazaoSelect.value;
+                    const diametroSelect = document.getElementById('diametro');
+                    diametroSelect.innerHTML = ''; // Limpa os diâmetros anteriores
+
+                    // Encontra a vazão selecionada no JSON
+                    const vazaoObj = data.find(item => item.vazao === selectedVazao);
+
+                    // Preenche o select de diâmetro com os disponíveis
+                    Object.keys(vazaoObj.diametro).forEach(diametro => {
+                        const option = document.createElement('option');
+                        option.value = diametro;
+                        option.text = diametro;
+                        diametroSelect.appendChild(option);
+                    });
+                });
+
+                // Disparar o evento de mudança ao carregar a página para popular o select de diâmetro
+                vazaoSelect.dispatchEvent(new Event('change'));
+            });
+
+        // Função para calcular a altura manométrica total
+        document.getElementById('calcular').addEventListener('click', () => {
+            const vazao = document.getElementById('vazao').value;
+            const diametro = document.getElementById('diametro').value;
+            const alturaSuc = parseFloat(document.getElementById('alturaSuc').value);
+            const alturaRec = parseFloat(document.getElementById('alturaRec').value);
+            const comprimento = parseFloat(document.getElementById('comprimento').value);
+
+            // Verifica se o valor da vazão e do diâmetro existem na tabela
+            let perdaDeCarga = 0;
+            tabelaPerdaCarga.forEach(item => {
+                if (item.vazao === vazao) {
+                    perdaDeCarga = parseFloat(item.diametro[diametro]) / 100; // Converte para decimal
+                }
+            });
+
+            // Cálculo da altura manométrica total com 5% de margem
+            let perdaTotal = comprimento * perdaDeCarga;
+            let alturaManometricaTotal = (alturaSuc + alturaRec + perdaTotal) * 1.05;
+
+            // Arredonda o resultado para cima
+            alturaManometricaTotal = Math.ceil(alturaManometricaTotal);
+
+            // Exibe o resultado
+            document.getElementById('resultado').textContent = ` ${alturaManometricaTotal} m.c.a `;
+        });
+
+       
+    </script>
+</body>
+</html>
